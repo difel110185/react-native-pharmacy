@@ -12,3 +12,13 @@ web-report/
 
 # macOS
 .DS_Store
+.idea/$PRODUCT_WORKSPACE_FILE$
+.idea/.gitignore
+.idea/FinalProject.iml
+.idea/libraries
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+debug.log
+
+.env

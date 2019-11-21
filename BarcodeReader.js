@@ -6,13 +6,17 @@ import { BarCodeScanner } from 'expo-barcode-scanner';
 
 export default class BarcodeReader extends React.Component {
     static navigationOptions = {title: "Barcode reader"};
-
-    state = {
-        hasCameraPermission: null,
-        scanned: false,
-    };
+    constructor(props){
+        super(props);
+        this.state = {
+            hasCameraPermission: null,
+            scanned: false,
+            screen:"Home"
+        };
+    }
 
     async componentDidMount() {
+        this.setState({screen:this.props.navigation.getParam("screen")});
         this.getPermissionsAsync();
     }
 
@@ -39,9 +43,10 @@ export default class BarcodeReader extends React.Component {
 
     handleBarCodeScanned = ({ data }) => {
         this.setState({ scanned: true });
-        this.props.navigation.navigate('DrugDetails', {
-            barcode: data
-        })
+        if (this.state.screen === "Home")
+            this.props.navigation.push('DrugDetails', {barcode: data});
+        else
+            this.props.navigation.push("AddProductToInventory", {barcode: data});
     };
 }
 

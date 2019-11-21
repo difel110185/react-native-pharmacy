@@ -7,10 +7,9 @@ export default class Home extends Component {
     render() {
         return (
             <View style={styles.container}>
-                <Button
-                    title="Scan Barcode"
-                    onPress={() => this.props.navigation.navigate('BarcodeReader')}
-                />
+                <Button title="Scan Barcode"
+                        onPress={() => this.props.navigation.navigate('BarcodeReader', {screen:"Home"})} />
+                <Button title={"View Inventory"} onPress={() => this.props.navigation.push("Inventory")} />
             </View>
         );
     }
