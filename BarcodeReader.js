@@ -1,8 +1,12 @@
 import * as React from 'react';
-import {Text, View, StyleSheet, Button, ActivityIndicator} from 'react-native';
+import {Text, View, StyleSheet, Button, ActivityIndicator, Alert} from 'react-native';
 import * as Permissions from 'expo-permissions';
 
 import { BarCodeScanner } from 'expo-barcode-scanner';
+import {NavigationActions, StackActions} from "react-navigation";
+import axios from "axios";
+import {API_KEY} from "react-native-dotenv";
+import {db} from "./db";
 
 export default class BarcodeReader extends React.Component {
     static navigationOptions = {title: "Barcode reader"};
@@ -11,7 +15,12 @@ export default class BarcodeReader extends React.Component {
         this.state = {
             hasCameraPermission: null,
             scanned: false,
-            screen:"Home"
+            screen: "Home",
+            name: "",
+            brand: "",
+            category: "",
+            desc: "",
+            image: ""
         };
     }
 
@@ -42,11 +51,29 @@ export default class BarcodeReader extends React.Component {
     }
 
     handleBarCodeScanned = ({ data }) => {
-        this.setState({ scanned: true });
-        if (this.state.screen === "Home")
-            this.props.navigation.push('DrugDetails', {barcode: data});
-        else
-            this.props.navigation.push("AddProductToInventory", {barcode: data});
+        this.setState({scanned: true});
+
+        const nav = this.props.navigation;
+
+        axios.get(`https://api.barcodelookup.com/v2/products?barcode=${data}&formatted=y&key=${API_KEY}`).then(res => {
+
+            db.ref("/items").orderByChild("barcode_number").equalTo(data).once('value', function(snapshot) {
+                if (!snapshot.exists())
+                    db.ref("/items").push(res.data.products[0]);
+                else
+                    Alert.alert("Error", "This item is already in the inventory.");
+            })
+            .catch(err => {
+                console.log('Error getting documents', err);
+            });
+
+            const resetAction = StackActions.reset({
+                index: 0,
+                actions: [NavigationActions.navigate({ routeName: 'Inventory' })],
+            });
+
+            nav.dispatch(resetAction);
+        });
     };
 }
 

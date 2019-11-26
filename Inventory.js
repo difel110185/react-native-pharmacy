@@ -1,5 +1,5 @@
 import React, {Component} from 'react';
-import {View, Text, StyleSheet, Button, FlatList, TouchableNativeFeedback} from 'react-native';
+import {View, Text, StyleSheet, Button, FlatList, TouchableWithoutFeedback} from 'react-native';
 import {Card, Divider} from 'react-native-elements';
 import {db} from "./db";
 
@@ -10,7 +10,6 @@ export default class Inventory extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            itemsInDB: false,
             items: [],
             refreshing: true,
         }
@@ -18,52 +17,44 @@ export default class Inventory extends Component {
 
     loadItems = () => {
         this.setState({refreshing: true});
+
+        let itemsArray = [];
+
         ref.on("value", snapshot => {
-            try {
-                console.log(Object.values(snapshot.val()));
-                this.setState({items: Object.values(snapshot.val()), itemsInDB: true, refreshing: false})
-            } catch (e) {
-                console.log(e);
-                this.setState({itemsInDB: false, refreshing: false})
-            }
-        })
+            Object.keys(snapshot.val()).forEach(function eachKey(key) {
+                itemsArray.push({
+                    id: key,
+                    values: snapshot.val()[key]
+                })
+            });
+
+            this.setState({items: itemsArray, refreshing: false});
+        });
     };
+
+    renderItem = ({item}) => {
+        return <TouchableWithoutFeedback useForeground={true} onPress={() => {
+            this.props.navigation.push("DrugDetails", {item});
+        }}>
+            <Card image={{uri: item.values.images[0]}} containerStyle={styles.card}>
+                <Divider style={styles.divider}/>
+                <Text style={styles.name}>{item.values.product_name}</Text>
+            </Card>
+        </TouchableWithoutFeedback>
+    }
 
     render() {
         return (
-            <View style={styles.container}>
-                <Button title={"Add Item"} onPress={() => this.props.navigation.push("AddProductToInventory")}/>
-                {!this.state.itemsInDB ? (
-                    <Text>Nothing to Show, Add Items to the inventory to keep track of them</Text>
-                ) : (
-                    <FlatList data={this.state.items}
-                              onRefresh={this.loadItems}
-                              refreshing={this.state.refreshing}
-                              keyExtractor={item => item.name}
-                              renderItem={({item}) => {
-                                  return <TouchableNativeFeedback useForeground={true} onPress={() => {
-                                      this.props.navigation.push("InventoryItem", {
-                                          item: item
-                                      });
-                                  }}>
-                                      <Card featuredTitle={item.name} featuredTitleStyle={{
-                                          marginHorizontal: 5,
-                                          textShadowColor: '#000000',
-                                          textShadowOffset: {width: 3, height: 3},
-                                          textShadowRadius: 3
-                                      }} image={{uri: item.image}}>
-                                          <Text style={{marginBottom: 10}}>{item.brand}</Text>
-                                          <Divider style={{backgroundColor: "#363636"}}/>
-                                          <Text style={{
-                                              margin: 5,
-                                              fontStyle: 'italic',
-                                              color: '#b2bec3',
-                                              fontSize: 10
-                                          }}>Category: {item.category}, Quantity: {item.quantity}</Text>
-                                      </Card>
-                                  </TouchableNativeFeedback>
-                              }}/>
-                )}
+            <View style={styles.v_container}>
+                <FlatList data={this.state.items}
+                          style={styles.container}
+                          onRefresh={this.loadItems}
+                          refreshing={this.state.refreshing}
+                          keyExtractor={item => item.id}
+                          renderItem={this.renderItem}/>
+                <View style={styles.buttonContainer}>
+                    <Button title={"Add Item"} color="white" onPress={() => this.props.navigation.push("BarcodeReader")}/>
+                </View>
             </View>
         );
     }
@@ -74,10 +65,31 @@ export default class Inventory extends Component {
 }
 
 const styles = StyleSheet.create({
-    container: {
-        flex: 1,
-        backgroundColor: '#fff',
-        alignItems: 'center',
-        justifyContent: 'center',
+    v_container: {
+        backgroundColor: '#F0F0F0',
+        height: '100%'
     },
+    container: {
+        padding: 14
+    },
+    card: {
+        borderColor: '#464646',
+        margin: 0,
+        marginBottom: 14
+    },
+    divider: {
+        backgroundColor: "#464646"
+    },
+    name: {
+        marginBottom: 10,
+        marginTop: 10,
+        textAlign: 'center'
+    },
+    buttonContainer: {
+        paddingLeft: 14,
+        paddingRight: 14,
+        paddingTop: 6,
+        paddingBottom: 6,
+        backgroundColor: '#0686E4'
+    }
 });

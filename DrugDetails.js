@@ -1,61 +1,53 @@
 import React, { Component } from 'react';
-import {ActivityIndicator, StyleSheet, Text, View, ScrollView} from 'react-native';
-import axios from "axios";
+import {StyleSheet, Text, View, ScrollView, Button, Alert} from 'react-native';
+import { NavigationActions, StackActions } from 'react-navigation';
 import FullWidthImage from 'react-native-fullwidth-image';
-import {API_KEY} from 'react-native-dotenv';
+import {db} from "./db";
 
 export default class DrugDetails extends Component {
     static navigationOptions = {title: "Drug Details"};
 
-    state = {
-        drug: undefined,
-        loading: true
-    };
-
-    componentDidMount = () => {
-        const barcode = this.props.navigation.getParam('barcode');
-        axios.get(`https://api.barcodelookup.com/v2/products?barcode=${barcode}&formatted=y&key=${API_KEY}`).then(res => {
-            this.setState({ drug: res.data.products[0], loading: false });
-        })
-    };
-
     render = () => {
-        const drug = this.state.drug;
+        let drug = this.props.navigation.getParam("item");
         return (
-            <ScrollView style={styles.v_container}>
-                {this.state.loading && <ActivityIndicator size="large" color="#0686E4" />}
-                {!this.state.loading &&
-                    <View style={styles.container}>
-                        <Text style={styles.name}>{drug.product_name}</Text>
-                        <Text style={styles.brand}>{drug.brand}</Text>
-                        <Text style={styles.category}>{drug.category}</Text>
+            <View style={styles.v_container}>
+                <ScrollView style={styles.container}>
+                    <Text style={styles.name}>{drug.values.product_name}</Text>
+                    <Text style={styles.brand}>{drug.values.brand}</Text>
+                    <Text style={styles.category}>{drug.values.category}</Text>
 
-                        {drug.images && drug.images.length > 0 && <FullWidthImage source={{uri: drug.images[0]}} />}
+                    {drug.values.images.length > 0 && <FullWidthImage source={{uri: drug.values.images[0]}} />}
 
-                        <Text style={styles.description}>{drug.description}</Text>
-                    </View>
-                }
-            </ScrollView>
+                    <Text style={styles.description}>{drug.values.description}</Text>
+                </ScrollView>
+                <View style={styles.buttonContainer}>
+                    <Button title={"Delete Item"} color="white" onPress={() => {
+                        Alert.alert('Delete Item', 'Are you sure you want to delete this item?', [
+                            {text: 'Cancel', onPress: () => console.log('Cancel Pressed'), style: 'cancel',},
+                            {text: 'OK', onPress: () => {
+                                db.ref('/items').child(drug.id).remove().then(() => {
+                                    const resetAction = StackActions.reset({
+                                        index: 0,
+                                        actions: [NavigationActions.navigate({ routeName: 'Inventory' })],
+                                    });
+                                    this.props.navigation.dispatch(resetAction);
+                                });
+                            }}
+                        ])
+                    }}/>
+                </View>
+            </View>
         )
     }
 }
 
 const styles = StyleSheet.create({
     v_container: {
-        padding: 8,
         backgroundColor: '#F0F0F0',
         height: '100%'
     },
     container: {
-        backgroundColor: '#FFFFFF',
-        paddingTop: 10,
-        paddingBottom: 10,
-        paddingLeft: 18,
-        paddingRight: 16,
-        marginLeft: 14,
-        marginRight: 14,
-        marginTop: 0,
-        marginBottom: 6
+        padding: 14,
     },
     name: {
         fontWeight: 'bold',
@@ -70,6 +62,14 @@ const styles = StyleSheet.create({
     },
     description: {
         marginTop: 10,
+        marginBottom: 20,
         textAlign: 'justify'
+    },
+    buttonContainer: {
+        paddingLeft: 14,
+        paddingRight: 14,
+        paddingTop: 6,
+        paddingBottom: 6,
+        backgroundColor: '#FF0000'
     }
 });
