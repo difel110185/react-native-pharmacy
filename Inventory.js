@@ -21,14 +21,18 @@ export default class Inventory extends Component {
         let itemsArray = [];
 
         ref.on("value", snapshot => {
-            Object.keys(snapshot.val()).forEach(function eachKey(key) {
-                itemsArray.push({
-                    id: key,
-                    values: snapshot.val()[key]
-                })
-            });
+            try {
+                Object.keys(snapshot.val()).forEach(function eachKey(key) {
+                    itemsArray.push({
+                        id: key,
+                        values: snapshot.val()[key]
+                    })
+                });
 
-            this.setState({items: itemsArray, refreshing: false});
+                this.setState({items: itemsArray, refreshing: false});
+            } catch (ignored) {
+                this.setState({items: [], refreshing: false});
+            }
         });
     };
 
@@ -41,19 +45,21 @@ export default class Inventory extends Component {
                 <Text style={styles.name}>{item.values.product_name}</Text>
             </Card>
         </TouchableWithoutFeedback>
-    }
+    };
 
     render() {
         return (
             <View style={styles.v_container}>
-                <FlatList data={this.state.items}
-                          style={styles.container}
-                          onRefresh={this.loadItems}
-                          refreshing={this.state.refreshing}
-                          keyExtractor={item => item.id}
-                          renderItem={this.renderItem}/>
+                {this.state.items ?
+                    <FlatList data={this.state.items}
+                              style={styles.container}
+                              onRefresh={this.loadItems}
+                              refreshing={this.state.refreshing}
+                              keyExtractor={item => item.id}
+                              renderItem={this.renderItem}/> : <Text>Inventory Empty</Text>}
                 <View style={styles.buttonContainer}>
-                    <Button title={"Add Item"} color="white" onPress={() => this.props.navigation.push("BarcodeReader")}/>
+                    <Button title={"Add Item"} color="white"
+                            onPress={() => this.props.navigation.push("BarcodeReader")}/>
                 </View>
             </View>
         );
